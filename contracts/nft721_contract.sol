@@ -397,28 +397,54 @@ contract NFTContract721 is RevokableDefaultOperatorFilterer, ERC2981 ,Ownable, E
 
 
 
+
     //
     //sbt and opensea filter section
     //
 
     bool public isSBT = false;
+    bool public useTimeRelease = false;
+    uint256 public timeReleaseStamp = 1672542000; //2023-01-01 12:00 JST
+    //https://tool.konisimple.net/date/unixtime
 
     function setIsSBT(bool _state) public onlyRole(ADMIN) {
         isSBT = _state;
     }
+    function setUseTimeRelease(bool _useTimeRelease) public onlyRole(ADMIN) {
+        useTimeRelease = _useTimeRelease;
+    }
+
+    function setTimeReleaseStamp(uint256 _timeReleaseStamp) public onlyRole(ADMIN) {
+        timeReleaseStamp = _timeReleaseStamp;
+    }
+
+    function timeRelease() public view returns(bool){
+        if( useTimeRelease == false){
+            return true;
+        }else{
+            if( block.timestamp < timeReleaseStamp ){
+                return false;
+            }else{
+                return true;
+            }
+        }
+    }
 
     function _beforeTokenTransfers( address from, address to, uint256 startTokenId, uint256 quantity) internal virtual override{
         require( isSBT == false || from == address(0) || to == address(0)|| to == address(0x000000000000000000000000000000000000dEaD), "transfer is prohibited");
+        require( timeRelease() == true , "Time lock Now");
         super._beforeTokenTransfers(from, to, startTokenId, quantity);
     }
 
     function setApprovalForAll(address operator, bool approved) public virtual override onlyAllowedOperatorApproval(operator){
         require( isSBT == false || approved == false , "setApprovalForAll is prohibited");
+        require( timeRelease() == true , "Time lock Now");
         super.setApprovalForAll(operator, approved);
     }
 
     function approve(address operator, uint256 tokenId) public virtual override onlyAllowedOperatorApproval(operator){
         require( isSBT == false , "approve is prohibited");
+        require( timeRelease() == true , "Time lock Now");
         super.approve(operator, tokenId);
     }
 

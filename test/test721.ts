@@ -7,6 +7,7 @@ import { Signer } from "ethers"
 import { MerkleTree} from 'merkletreejs';
 import keccak256 from 'keccak256';
 import { extendConfig } from "hardhat/config"
+import { sbtContractSol } from "../typechain-types/contracts"
 
 
 
@@ -610,7 +611,12 @@ describe("Test of ERC721", function () {
       let tokens = await SBTContract.tokensOfOwner(owner.address);
       await expect(SBTContract.connect(owner).transferFrom(owner.address,otherAccount1.address,tokens[0])).reverted;
 
-      await SBTContract.setIsSBT(false);
+      await SBTContract.connect(owner).setIsSBT(false);
+      await SBTContract.connect(owner).setUseTimeRelease(true);
+      await SBTContract.connect(owner).setTimeReleaseStamp(99999999999999);
+      await expect(SBTContract.connect(owner).transferFrom(owner.address,otherAccount1.address,tokens[0])).reverted;
+
+      await SBTContract.connect(owner).setTimeReleaseStamp(1);
       await expect(SBTContract.connect(owner).transferFrom(owner.address,otherAccount1.address,tokens[0])).not.reverted;
 
     });

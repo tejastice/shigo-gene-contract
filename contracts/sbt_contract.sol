@@ -1,4 +1,28 @@
 // SPDX-License-Identifier: MIT
+// Copyright (c) 2023 Keisuke OHNO (kei31.eth)
+
+/*
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+*/
+
 
 pragma solidity >=0.8.17;
 
@@ -71,15 +95,14 @@ contract SBTContract is RevokableDefaultOperatorFilterer, ERC2981 ,Ownable, ERC7
     }
 
 
-
     //
     //mint section
     //
 
     uint256 public cost = 1000000000000000;
-    uint256 public maxSupply = 22222;
+    uint256 public maxSupply = 5000 -1;
     uint256 public maxMintAmountPerTransaction = 200;
-    uint256 public publicSaleMaxMintAmountPerAddress = 20;
+    uint256 public publicSaleMaxMintAmountPerAddress = 50;
     bool public paused = true;
 
     bool public onlyAllowlisted = true;
@@ -108,7 +131,7 @@ contract SBTContract is RevokableDefaultOperatorFilterer, ERC2981 ,Ownable, ERC7
         require(!paused, "the contract is paused");
         require(0 < _mintAmount, "need to mint at least 1 NFT");
         require(_mintAmount <= maxMintAmountPerTransaction, "max mint amount per session exceeded");
-        require( (_nextTokenId() -1) + _mintAmount <= maxSupply , "max NFT limit exceeded");
+        require( _nextTokenId() + _mintAmount -1 <= maxSupply , "max NFT limit exceeded");
         require(cost * _mintAmount <= msg.value, "insufficient funds");
 
         uint256 maxMintAmountPerAddress;
@@ -156,7 +179,7 @@ contract SBTContract is RevokableDefaultOperatorFilterer, ERC2981 ,Ownable, ERC7
             _mintAmount += _UserMintAmount[i];
         }
         require(0 < _mintAmount , "need to mint at least 1 NFT");
-        require( (_nextTokenId() -1) + _mintAmount <= maxSupply , "max NFT limit exceeded");        
+        require( _nextTokenId() + _mintAmount -1 <= maxSupply , "max NFT limit exceeded");        
         for (uint256 i = 0; i < _UserMintAmount.length; i++) {
             _safeMint(_airdropAddresses[i], _UserMintAmount[i] );
         }
@@ -351,7 +374,7 @@ contract SBTContract is RevokableDefaultOperatorFilterer, ERC2981 ,Ownable, ERC7
 
     function externalMint(address _address , uint256 _amount ) external payable {
         require(hasRole(MINTER_ROLE, msg.sender), "Caller is not a minter");
-        require( (_nextTokenId() -1) + _amount <= maxSupply , "max NFT limit exceeded");
+        require( _nextTokenId() + _amount -1 <= maxSupply , "max NFT limit exceeded");
         _safeMint( _address, _amount );
     }
 
@@ -366,28 +389,52 @@ contract SBTContract is RevokableDefaultOperatorFilterer, ERC2981 ,Ownable, ERC7
 
 
 
+
     //
     //sbt and opensea filter section
     //
 
     bool public isSBT = false;
+    bool public useTimeRelease = false;
+    uint256 public timeReleaseStamp = 1672542000; //2023-01-01 12:00 JST
+    //https://tool.konisimple.net/date/unixtime
 
     function setIsSBT(bool _state) public onlyRole(ADMIN) {
         isSBT = _state;
     }
+    function setUseTimeRelease(bool _useTimeRelease) public onlyRole(ADMIN) {
+        useTimeRelease = _useTimeRelease;
+    }
+    function setTimeReleaseStamp(uint256 _timeReleaseStamp) public onlyRole(ADMIN) {
+        timeReleaseStamp = _timeReleaseStamp;
+    }
+    function timeRelease() public view returns(bool){
+        if( useTimeRelease == false){
+            return true;
+        }else{
+            if( block.timestamp < timeReleaseStamp ){
+                return false;
+            }else{
+                return true;
+            }
+        }
+    }
 
     function _beforeTokenTransfers( address from, address to, uint256 startTokenId, uint256 quantity) internal virtual override{
         require( isSBT == false || from == address(0) || to == address(0)|| to == address(0x000000000000000000000000000000000000dEaD), "transfer is prohibited");
+        require( timeRelease() == true , "Time lock Now");
         super._beforeTokenTransfers(from, to, startTokenId, quantity);
     }
 
     function setApprovalForAll(address operator, bool approved) public virtual override onlyAllowedOperatorApproval(operator){
         require( isSBT == false || approved == false , "setApprovalForAll is prohibited");
+        require( timeRelease() == true , "Time lock Now");
         super.setApprovalForAll(operator, approved);
     }
 
     function approve(address operator, uint256 tokenId) public virtual override onlyAllowedOperatorApproval(operator){
         require( isSBT == false , "approve is prohibited");
+        require( timeRelease() == true , "Time lock Now");
         super.approve(operator, tokenId);
     }
 
