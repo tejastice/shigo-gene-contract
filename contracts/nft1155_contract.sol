@@ -33,6 +33,8 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "contract-allow-list/contracts/proxy/interface/IContractAllowListProxy.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {UpdatableOperatorFilterer} from "operator-filter-registry/src/UpdatableOperatorFilterer.sol";
 import {RevokableDefaultOperatorFilterer} from "operator-filter-registry/src/RevokableDefaultOperatorFilterer.sol";
 
@@ -51,30 +53,51 @@ contract NFTContract1155 is RevokableDefaultOperatorFilterer , ERC1155, ERC2981 
     bytes32 public constant ADMIN = keccak256("ADMIN");
 
 
-
     constructor() ERC1155("") {
-        name = "Free Gallery";
-        symbol = "FRG";
+        name = "ZQN-DAO Voting NFT";
+        symbol = "ZVN";
 
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         grantRole(MINTER_ROLE        , msg.sender);
         grantRole(AIRDROP_ROLE       , msg.sender);
         grantRole(ADMIN              , msg.sender);
 
-        grantRole(MINTER_ROLE        , 0x1d209a4812bCC330DdC2d3F7d3678aa31Be7343f);
-        grantRole(ADMIN              , 0x1d209a4812bCC330DdC2d3F7d3678aa31Be7343f);
+        //CAL initialization
+        setCALLevel(1);
 
-        //setUseOnChainMetadata(true);
+        setCAL(0xdbaa28cBe70aF04EbFB166b1A3E8F8034e5B9FC7);//Ethereum mainnet proxy
+        //setCAL(0xb506d7BbE23576b8AAf22477cd9A7FDF08002211);//Goerli testnet proxy
+
+        addLocalContractAllowList(0x1E0049783F008A0085193E00003D00cd54003c71);//OpenSea
+        addLocalContractAllowList(0x4feE7B061C97C9c496b01DbcE9CDb10c02f0a0Be);//Rarible
 
         //Royalty
-        setDefaultRoyalty(0xdEcf4B112d4120B6998e5020a6B4819E490F7db6 , 1000);
-        setWithdrawAddress(0xdEcf4B112d4120B6998e5020a6B4819E490F7db6);
+        setDefaultRoyalty(0x40abd10506bC2C62B5Ed6EcD4E97C042afd9927C , 1000);
+        setWithdrawAddress(0x40abd10506bC2C62B5Ed6EcD4E97C042afd9927C);
 
         setPhaseId(0);
-        setUseBaseURI(true);
-        setBaseURI("https://data.zqn.wtf/free-gallery/metadata/");
+        setUseOnChainMetadataWithImageURI(true);
 
-        adminMint(msg.sender , 1);        
+        setOnChainMetadataWithImageURI(
+            0 , 
+            "AKANE" , 
+            "AKANE",
+            "AKANE",
+            "https://arweave.net/a6Pfyubm3YIP4c81VbFNI8UmzzXyBw9aP8BfVWfXBks",
+            false,
+            " "
+        );
+
+        _mint(msg.sender , 0 , 1 , "");
+
+        setPhaseData(
+            0,
+            99999,
+            0,
+            9999,
+            0xd96ab3e50603e5217a2544060973eacc6e27fedfcd6f418b4e3f3cca0afef2da
+        );
+
     }
 
 
@@ -120,12 +143,24 @@ contract NFTContract1155 is RevokableDefaultOperatorFilterer , ERC1155, ERC2981 
         _;
     }
 
-    function mint(uint256 _mintAmount , uint256 _maxMintAmount , bytes32[] calldata _merkleProof , uint256 /*_burnId*/ )  external payable callerIsUser{
+    uint256 public minTokenId = 0;
+    uint256 public maxTokenId = 4;
+
+    function setMinTokenId(uint256 _minTokenId) public onlyRole(ADMIN) {
+        minTokenId = _minTokenId;
+    }
+    function setMaxTokenId(uint256 _maxTokenId) public onlyRole(ADMIN) {
+        maxTokenId = _maxTokenId;
+    }
+
+
+    function mint(uint256 _mintAmount , uint256 _maxMintAmount , bytes32[] calldata _merkleProof , uint256 _tokenId )  external payable callerIsUser{
         require( !paused, "the contract is paused");
         require( 0 < _mintAmount , "need to mint at least 1 NFT");
         require( _mintAmount <= phaseData[phaseId].maxMintAmountPerTransaction, "max mint amount per session exceeded");
         require( phaseData[phaseId].totalSupply + _mintAmount <= phaseData[phaseId].maxSupply, "max NFT limit exceeded");
         require( phaseData[phaseId].cost * _mintAmount <=  msg.value , "insufficient funds");
+        require( minTokenId <= _tokenId && _tokenId <= maxTokenId, "Token ID is not supported by this contract");
 
         uint256 maxMintAmountPerAddress;
         if(onlyAllowlisted == true) {
@@ -141,8 +176,8 @@ contract NFTContract1155 is RevokableDefaultOperatorFilterer , ERC1155, ERC2981 
             phaseData[phaseId].userMintedAmount[msg.sender] += _mintAmount;
         }
 
-        phaseData[phaseId].totalSupply += _mintAmount;
-        _mint(msg.sender, phaseId , _mintAmount, "");
+        phaseData[_tokenId].totalSupply += _mintAmount;
+        _mint(msg.sender, _tokenId , _mintAmount, "");
     }
 
     bytes32 public constant AIRDROP_ROLE = keccak256("AIRDROP_ROLE");
@@ -172,7 +207,7 @@ contract NFTContract1155 is RevokableDefaultOperatorFilterer , ERC1155, ERC2981 
         uint256 _cost , 
         uint256 _maxMintAmountPerTransaction ,
         bytes32 _merkleRoot
-    ) external onlyRole(ADMIN) {
+    ) public onlyRole(ADMIN) {
         phaseData[_id].maxSupply = _maxSupply;
         phaseData[_id].cost = _cost;
         phaseData[_id].maxMintAmountPerTransaction = _maxMintAmountPerTransaction;
@@ -239,7 +274,6 @@ contract NFTContract1155 is RevokableDefaultOperatorFilterer , ERC1155, ERC2981 
 
     bool public useOnChainMetadata = false;
 
-    //single image metadata
     function setUseOnChainMetadata(bool _useOnChainMetadata) public onlyRole(ADMIN) {
         useOnChainMetadata = _useOnChainMetadata;
     }
@@ -248,6 +282,19 @@ contract NFTContract1155 is RevokableDefaultOperatorFilterer , ERC1155, ERC2981 
     mapping (uint256 => string)  public metadataDescription;
     mapping (uint256 => string)  public metadataAttributes;
     mapping (uint256 => string)  public imageData;
+
+    bool public useOnChainMetadataWithImageURI = false;
+
+    function setUseOnChainMetadataWithImageURI(bool _useOnChainMetadataWithImageURI) public onlyRole(ADMIN) {
+        useOnChainMetadataWithImageURI = _useOnChainMetadataWithImageURI;
+    }
+
+    mapping (uint256 => string)  public imageURI;
+    mapping (uint256 => bool)    public useAnimationURI;
+    mapping (uint256 => string)  public animationURI;
+
+
+
 
     //single image metadata
     function setMetadataTitle(uint256 _id , string memory _metadataTitle) public onlyRole(ADMIN) {
@@ -263,6 +310,19 @@ contract NFTContract1155 is RevokableDefaultOperatorFilterer , ERC1155, ERC2981 
         imageData[_id] = _imageData;
     }
 
+
+    function setImageURI(uint256 _id , string memory _imageURI) public onlyRole(ADMIN) {
+        imageURI[_id] = _imageURI;
+    }
+    function setUseAnimationURI(uint256 _id , bool _useAnimationURI) public onlyRole(ADMIN) {
+        useAnimationURI[_id] = _useAnimationURI;
+    }
+    function setAnimationURI(uint256 _id , string memory _animationURI) public onlyRole(ADMIN) {
+        animationURI[_id] = _animationURI;
+    }
+
+
+
     function setOnChainMetadata(
         uint256 _id , 
         string memory _metadataTitle, 
@@ -276,6 +336,22 @@ contract NFTContract1155 is RevokableDefaultOperatorFilterer , ERC1155, ERC2981 
         setImageData( _id , _imageData);
     }
 
+    function setOnChainMetadataWithImageURI(
+        uint256 _id , 
+        string memory _metadataTitle, 
+        string memory _metadataDescription,
+        string memory _metadataAttributes,
+        string memory _imageURI,
+        bool _useAnimationURI,
+        string memory _animationURI
+         )public onlyRole(ADMIN){
+        setMetadataTitle( _id , _metadataTitle);
+        setMetadataDescription( _id , _metadataDescription);
+        setMetadataAttributes( _id , _metadataAttributes);
+        setImageURI( _id , _imageURI);
+        setUseAnimationURI( _id , _useAnimationURI);
+        setAnimationURI( _id , _animationURI);
+    }
 
 
     bool public useBaseURI = false;
@@ -307,6 +383,19 @@ contract NFTContract1155 is RevokableDefaultOperatorFilterer , ERC1155, ERC2981 
                         '"name":"' , metadataTitle[_id] ,'",' ,
                         '"description":"' , metadataDescription[_id] ,  '",' ,
                         '"image": "data:image/svg+xml;base64,' , imageData[_id] , '",' ,
+                        '"attributes":[{"trait_type":"type","value":"' , metadataAttributes[_id] , '"}]',
+                    '}'
+                )
+            ) ) );
+        }
+        if(useOnChainMetadataWithImageURI == true){
+            return string( abi.encodePacked( 'data:application/json;base64,' , Base64.encode(
+                abi.encodePacked(
+                    '{',
+                        '"name":"' , metadataTitle[_id] ,'",' ,
+                        '"description":"' , metadataDescription[_id] ,  '",' ,
+                        '"image": "' , imageURI[_id] , '",' ,
+                        useAnimationURI[_id]==true ? string(abi.encodePacked('"animation_url": "' , animationURI[_id] , '",')) :"" ,
                         '"attributes":[{"trait_type":"type","value":"' , metadataAttributes[_id] , '"}]',
                     '}'
                 )
@@ -420,6 +509,10 @@ contract NFTContract1155 is RevokableDefaultOperatorFilterer , ERC1155, ERC2981 
 
     function setApprovalForAll(address operator, bool approved) public virtual override onlyAllowedOperatorApproval(operator) {
         require( isSBT == false || approved == false , "setApprovalForAll is prohibited");
+        require(
+            _isAllowed(operator) || approved == false,
+            "RestrictApprove: Can not approve locked token"
+        );
         super.setApprovalForAll(operator, approved);
     }
 
@@ -468,6 +561,81 @@ contract NFTContract1155 is RevokableDefaultOperatorFilterer , ERC1155, ERC2981 
     function setDefaultRoyalty(address _receiver, uint96 _feeNumerator) public onlyOwner{
         _setDefaultRoyalty(_receiver, _feeNumerator);
     }
+
+
+
+
+    // ==================================================================
+    // Ristrict Approve
+    // ==================================================================
+
+    using EnumerableSet for EnumerableSet.AddressSet;
+
+    IContractAllowListProxy public cal;
+    EnumerableSet.AddressSet localAllowedAddresses;
+    uint256 public calLevel = 1;
+    bool public enableRestrict = true;
+
+    function setEnebleRestrict(bool _enableRestrict )public onlyRole(ADMIN){
+        enableRestrict = _enableRestrict;
+    }
+
+
+    function addLocalContractAllowList(address transferer)
+        public
+        onlyRole(ADMIN)
+    {
+        localAllowedAddresses.add(transferer);
+    }
+
+    function removeLocalContractAllowList(address transferer)
+        external
+        onlyRole(ADMIN)
+    {
+        localAllowedAddresses.remove(transferer);
+    }
+
+    function getLocalContractAllowList()
+        external
+        view
+        returns (address[] memory)
+    {
+        return localAllowedAddresses.values();
+    }
+
+    function _isLocalAllowed(address transferer)
+        internal
+        view
+        virtual
+        returns (bool)
+    {
+        return localAllowedAddresses.contains(transferer);
+    }
+
+    function _isAllowed(address transferer)
+        internal
+        view
+        virtual
+        returns (bool)
+    {
+        if(enableRestrict == false) {
+            return true;
+        }
+
+        return
+            _isLocalAllowed(transferer) || cal.isAllowed(transferer, calLevel);
+    }
+
+    function setCAL(address value) public onlyRole(ADMIN) {
+        cal = IContractAllowListProxy(value);
+    }
+
+    function setCALLevel(uint256 value) public onlyRole(ADMIN) {
+        calLevel = value;
+    }
+
+
+
 
 
     //
