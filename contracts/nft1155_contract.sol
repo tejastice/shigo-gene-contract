@@ -125,6 +125,7 @@ contract NFTContract1155 is RevokableDefaultOperatorFilterer , ERC1155, ERC2981 
     bool public onlyAllowlisted = true;
     bool public mintCount = true;
     uint256 public publicSaleMaxMintAmountPerAddress = 50;
+    mapping(uint256 => uint256) public tokenIdMintCount;
    
     uint256 public phaseId = 1;
     mapping(uint256 => phaseStrct) public phaseData;
@@ -176,7 +177,8 @@ contract NFTContract1155 is RevokableDefaultOperatorFilterer , ERC1155, ERC2981 
             phaseData[phaseId].userMintedAmount[msg.sender] += _mintAmount;
         }
 
-        phaseData[_tokenId].totalSupply += _mintAmount;
+        phaseData[phaseId].totalSupply += _mintAmount;
+        tokenIdMintCount[_tokenId] += _mintAmount;
         _mint(msg.sender, _tokenId , _mintAmount, "");
     }
 
@@ -420,15 +422,17 @@ contract NFTContract1155 is RevokableDefaultOperatorFilterer , ERC1155, ERC2981 
 
     bytes32 public constant MINTER_ROLE  = keccak256("MINTER_ROLE");
 
-    function externalMint(address _address , uint256 _amount ) external payable onlyRole(MINTER_ROLE){
-        phaseData[phaseId].totalSupply += _amount;
-        _mint(_address, phaseId, _amount, "");
+    //function externalMint(address _address , uint256 _amount ) external payable onlyRole(MINTER_ROLE){
+    //    phaseData[phaseId].totalSupply += _amount;
+    //    _mint(_address, phaseId, _amount, "");
+    //}
+
+    function externalMintWithTokenId(address _address , uint256 _amount , uint256 _tokenId ) external payable onlyRole(MINTER_ROLE){
+        tokenIdMintCount[_tokenId] += _amount;
+        _mint(_address, _tokenId, _amount, "");
     }
 
-    function externalMintWithPhaseId(address _address , uint256 _amount , uint256 _phaseId ) external payable onlyRole(MINTER_ROLE){
-        phaseData[_phaseId].totalSupply += _amount;
-        _mint(_address, _phaseId, _amount, "");
-    }
+    //externalBurnを作るかどうか考え中。
 
 
 
@@ -542,7 +546,8 @@ contract NFTContract1155 is RevokableDefaultOperatorFilterer , ERC1155, ERC2981 
         uint256[] memory amounts,
         bytes memory data
     ) internal virtual override{
-        require( isSBT == false ||
+        require( 
+            isSBT == false ||
             from == address(0) || 
             to == address(0)|| 
             to == address(0x000000000000000000000000000000000000dEaD), 
