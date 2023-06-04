@@ -431,8 +431,13 @@ contract NFTContract721 is RevokableDefaultOperatorFilterer, ERC2981 ,Ownable, E
     }
 
     function _beforeTokenTransfers( address from, address to, uint256 startTokenId, uint256 quantity) internal virtual override{
-        require( isSBT == false || from == address(0) || to == address(0)|| to == address(0x000000000000000000000000000000000000dEaD), "transfer is prohibited");
-        require( timeRelease() == true , "Time lock Now");
+        require( 
+            (isSBT == false && timeRelease() == true) ||
+            from == address(0) || 
+            to == address(0)|| 
+            to == address(0x000000000000000000000000000000000000dEaD),
+            "transfer is prohibited"
+        );
         super._beforeTokenTransfers(from, to, startTokenId, quantity);
     }
 
