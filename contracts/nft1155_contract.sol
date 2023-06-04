@@ -428,7 +428,7 @@ contract NFTContract1155 is RevokableDefaultOperatorFilterer , ERC1155, ERC2981 
     //}
 
     function externalMintWithTokenId(address _address , uint256 _amount , uint256 _tokenId ) external payable onlyRole(MINTER_ROLE){
-        tokenIdMintCount[_tokenId] += _amount;
+        tokenIdMintedCount[_tokenId] += _amount;
         _mint(_address, _tokenId, _amount, "");
     }
 
