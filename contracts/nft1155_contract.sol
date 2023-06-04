@@ -125,7 +125,7 @@ contract NFTContract1155 is RevokableDefaultOperatorFilterer , ERC1155, ERC2981 
     bool public onlyAllowlisted = true;
     bool public mintCount = true;
     uint256 public publicSaleMaxMintAmountPerAddress = 50;
-    mapping(uint256 => uint256) public tokenIdMintCount;
+    mapping(uint256 => uint256) public tokenIdMintedCount;
    
     uint256 public phaseId = 1;
     mapping(uint256 => phaseStrct) public phaseData;
@@ -178,7 +178,7 @@ contract NFTContract1155 is RevokableDefaultOperatorFilterer , ERC1155, ERC2981 
         }
 
         phaseData[phaseId].totalSupply += _mintAmount;
-        tokenIdMintCount[_tokenId] += _mintAmount;
+        tokenIdMintedCount[_tokenId] += _mintAmount;
         _mint(msg.sender, _tokenId , _mintAmount, "");
     }
 
