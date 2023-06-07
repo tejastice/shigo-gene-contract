@@ -422,10 +422,10 @@ contract NFTContract1155 is RevokableDefaultOperatorFilterer , ERC1155, ERC2981 
 
     bytes32 public constant MINTER_ROLE  = keccak256("MINTER_ROLE");
 
-    //function externalMint(address _address , uint256 _amount ) external payable onlyRole(MINTER_ROLE){
-    //    phaseData[phaseId].totalSupply += _amount;
-    //    _mint(_address, phaseId, _amount, "");
-    //}
+    function externalMint(address _address , uint256 _amount ) external payable onlyRole(MINTER_ROLE){
+        phaseData[phaseId].totalSupply += _amount;
+        _mint(_address, phaseId, _amount, "");
+    }
 
     function externalMintWithTokenId(address _address , uint256 _amount , uint256 _tokenId ) external payable onlyRole(MINTER_ROLE){
         tokenIdMintedCount[_tokenId] += _amount;

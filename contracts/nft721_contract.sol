@@ -107,6 +107,7 @@ contract NFTContract721 is RevokableDefaultOperatorFilterer, ERC2981 ,Ownable, E
     //mint section
     //
 
+    //https://eth-converter.com/
     uint256 public cost = 1000000000000000;
     uint256 public maxSupply = 5000 -1;
     uint256 public maxMintAmountPerTransaction = 200;
