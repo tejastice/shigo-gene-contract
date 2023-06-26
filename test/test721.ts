@@ -31,6 +31,12 @@ describe("Test of ERC721", function () {
     return dMinterContract 
   }
 
+  const pieMinterdeploy = async (owner: Signer) => {
+    const pieMinterContract = await ethers.getContractFactory("pieMinter")
+    const dpieMinterContract = await pieMinterContract.connect(owner).deploy()
+    return dpieMinterContract 
+  }
+
 
   async function fixture() {
     const [owner, otherAccount1 , otherAccount2] = await ethers.getSigners()
@@ -845,6 +851,34 @@ describe("Test of ERC721", function () {
       await expect(NFTContract.airdropMint([owner.address],[Number(maxSupply) + 2 - Number(totalSupply) ])).reverted;
       await expect(NFTContract.airdropMint([owner.address],[Number(maxSupply) + 1 - Number(totalSupply) ])).not.reverted;
 
+    });
+
+
+    it("function test of pieMint", async function () {
+      const { NFTContract, SBTContract , owner, otherAccount1 , otherAccount2 , withdrawAddress, royaltyAddress } = await loadFixture(fixture)
+      const pieMinterContract = await pieMinterdeploy(owner)
+
+      let MINTER = await NFTContract.MINTER_ROLE();
+
+      await expect( pieMinterContract.connect(otherAccount1).mint(2 , otherAccount1.address) ).reverted;
+
+      await NFTContract.connect(owner).grantRole(MINTER,pieMinterContract.address);
+      await pieMinterContract.connect(owner).setNFTCollection(NFTContract.address);
+      await pieMinterContract.connect(owner).grantRole(MINTER , otherAccount1.address);
+      await pieMinterContract.connect(owner).setWithdrawAddress(otherAccount2.address);
+      await pieMinterContract.connect(owner).setCost(1000000000000000);
+      await expect( pieMinterContract.connect(otherAccount1).mint(2 , otherAccount1.address) ).revertedWith("the contract is paused");
+
+      await pieMinterContract.connect(owner).setPause(false);
+      await expect( pieMinterContract.connect(otherAccount1).mint(2 , otherAccount1.address) ).revertedWith("insufficient funds");
+
+      await expect( pieMinterContract.connect(otherAccount1).mint(0 , otherAccount1.address , { value: ethers.utils.parseEther("0.001") } )  ).revertedWith("need to mint at least 1 NFT");
+
+      console.log( await otherAccount2.getBalance())
+      await expect( pieMinterContract.connect(otherAccount1).mint(2 , otherAccount1.address , { value: ethers.utils.parseEther("0.002") } )  ).not.reverted;
+      console.log( await otherAccount2.getBalance())
+
+      
     });
 
 
