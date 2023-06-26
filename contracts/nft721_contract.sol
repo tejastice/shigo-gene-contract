@@ -59,13 +59,13 @@ contract NFTContract721 is RevokableDefaultOperatorFilterer, ERC2981 ,Ownable, E
         grantRole(AIRDROP_ROLE      , msg.sender);
         grantRole(ADMIN             , msg.sender);
 
-        setBaseURI("https://data.freelance-gakkou.jp/llac/metadata/");
+        setBaseURI("https://data.zqn.wtf/tereqn/metadata/");
 
         //setUseSingleMetadata(true);
-        //setMetadataTitle("Live Like A Cat");
-        //setMetadataDescription("Live Like A Cat");
-        //setMetadataAttributes("Live Like A Cat");
-        //setImageURI("ipfs://QmT25a2iq1nSnnrHoKyjBpFNG6JqoHpsKQd5mKujjYwf78/1.gif");
+        //setMetadataTitle("Title");
+        //setMetadataDescription("Description");
+        //setMetadataAttributes("Attribute");
+        //setImageURI("https://data.zqn.wtf/tereqn/images/1.png");
 
         //CAL initialization
         setCALLevel(1);
@@ -83,8 +83,8 @@ contract NFTContract721 is RevokableDefaultOperatorFilterer, ERC2981 ,Ownable, E
         setDefaultRoyalty(0xdEcf4B112d4120B6998e5020a6B4819E490F7db6 , 1000);
         setWithdrawAddress(0xdEcf4B112d4120B6998e5020a6B4819E490F7db6);
 
-        setMintWithSBT(true);
-        setSbtCollection(0x6eED0Ff2afbe92B6d0990Cd63cA10Ce5F425dBf1);
+        //setMintWithSBT(true);
+        //setSbtCollection(0x6eED0Ff2afbe92B6d0990Cd63cA10Ce5F425dBf1);
     }
 
     //
