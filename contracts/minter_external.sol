@@ -83,9 +83,9 @@ contract externalMinter is Ownable , AccessControl{
 
     //https://eth-converter.com/
     uint256 public cost = 7000000000000000;
-    uint256 public maxSupply = 5;
-    uint256 public maxMintAmountPerTransaction = 1;
-    uint256 public publicSaleMaxMintAmountPerAddress = 1;
+    uint256 public maxSupply = 1000;
+    uint256 public maxMintAmountPerTransaction = 200;
+    uint256 public publicSaleMaxMintAmountPerAddress = 50;
     bool public paused = true;
 
     bool public onlyAllowlisted = true;
