@@ -37,6 +37,11 @@ describe("Test of ERC721", function () {
     return dpieMinterContract 
   }
 
+  const Sellerdeploy = async (owner: Signer) => {
+    const SellerContract = await ethers.getContractFactory("NFTSellser")
+    const dSellerContract = await SellerContract.connect(owner).deploy()
+    return dSellerContract 
+  }  
 
   async function fixture() {
     const [owner, otherAccount1 , otherAccount2] = await ethers.getSigners()
@@ -880,6 +885,72 @@ describe("Test of ERC721", function () {
 
       
     });
+
+
+    it("Seller test", async function () {
+      const { NFTContract, SBTContract , owner, otherAccount1 , otherAccount2 , withdrawAddress, royaltyAddress } = await loadFixture(fixture)
+      const SellerContract = await Sellerdeploy(owner)
+  
+      let currentTokenId =  Number(await NFTContract.connect(owner).currentTokenId()) ;
+      await NFTContract.connect(owner).airdropMint([otherAccount1.address],[5] );
+
+
+
+      const [addr1, addr2 , addr3 , addr4 , addr5 ] = await ethers.getSigners()
+      const [tokenId1 , tokenId2 ,tokenId3 , tokenId4 , tokenId5] = [
+        currentTokenId+1,
+        currentTokenId+2,
+        currentTokenId+3,
+        currentTokenId+4,
+        currentTokenId+5
+      ];
+
+
+      const allowlistAddresses = [
+        [addr1.address,tokenId1],
+        [addr2.address,tokenId2],
+        [addr3.address,tokenId3],
+        [addr4.address,tokenId4],
+        [addr5.address,tokenId5],
+      ]
+
+
+      const leafNodes = allowlistAddresses.map(addr => ethers.utils.solidityKeccak256(['address', 'uint256'], [addr[0] , addr[1]]));
+      const merkleTree = new MerkleTree(leafNodes, keccak256, { sortPairs: true});
+      
+      const rootHash = merkleTree.getRoot();
+
+      let merkleRoot = "0x" + rootHash.toString('hex');
+      
+      const nameMap = allowlistAddresses.map( list => list[0] );
+      let addressId = nameMap.indexOf(allowlistAddresses[4][0]);
+      const claimingAddress = ethers.utils.solidityKeccak256(['address', 'uint256'], [allowlistAddresses[addressId][0] , allowlistAddresses[addressId][1]]);
+
+      const hexProof = merkleTree.getHexProof(claimingAddress);
+      
+      //await SellerContract.connect(owner).setMerkleRoot(merkleRoot);
+      //await SellerContract.connect(owner).setNFTCollection(NFTContract.address);
+      //await SellerContract.connect(owner).setSellserWalletAddress(otherAccount1.address);
+
+      await expect(SellerContract.connect(owner).setSaleData( 5000000000000000 ,merkleRoot , otherAccount1.address , NFTContract.address) ).not.reverted;
+
+      //全部エラー
+      await expect( SellerContract.connect(addr5).buy(tokenId5,hexProof,{ value: ethers.utils.parseEther("0.001") }) ).revertedWith("the contract is paused");
+      await SellerContract.connect(owner).setPause(false);
+      await expect( SellerContract.connect(addr5).buy(tokenId5,hexProof,{ value: ethers.utils.parseEther("0") }) ).revertedWith("insufficient funds");
+      await expect( SellerContract.connect(addr5).buy(0,hexProof,{ value: ethers.utils.parseEther("1") }) ).revertedWith("NFT out of stock");
+      await expect( SellerContract.connect(addr5).buy(tokenId4,hexProof,{ value: ethers.utils.parseEther("1") }) ).revertedWith("user is not allowlisted");
+      await expect( SellerContract.connect(addr5).buy(tokenId5,hexProof,{ value: ethers.utils.parseEther("1") }) ).reverted;
+
+      await NFTContract.connect(owner).addLocalContractAllowList(SellerContract.address);
+      await NFTContract.connect(otherAccount1).setApprovalForAll(SellerContract.address,true);
+
+      //成功！
+      await expect( SellerContract.connect(addr5).buy(tokenId5,hexProof,{ value: ethers.utils.parseEther("1") }) ).not.reverted;
+
+    });
+
+
 
 
 

@@ -61,16 +61,14 @@ contract onchainTokenURI is Ownable{
 
     //public
     function tokenURI(uint256 /*tokenId*/) public view returns (string memory) {
-        return string( abi.encodePacked( 'data:application/json;base64,' , Base64.encode(
-            abi.encodePacked(
-                '{'
+        return string( abi.encodePacked( 'data:application/json;utf8,' , 
+                '{',
                     '"name":"' , metadataTitle ,'",' ,
                     '"description":"' , metadataDescription ,  '",' ,
-                    '"image":" ', imageData , '",' ,
+                    '"image": "' , imageData , '",' ,
                     '"attributes":[{"trait_type":"type","value":"' , metadataAttributes , '"}]',
                 '}'
-            )
-        ) ) );
+        ) );
     }
 
 

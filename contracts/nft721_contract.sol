@@ -356,8 +356,7 @@ contract NFTContract721 is RevokableDefaultOperatorFilterer, ERC2981 ,Ownable, E
             return interfaceOfTokenURI.tokenURI(tokenId);
         }
         if(useSingleMetadata == true){
-            return string( abi.encodePacked( 'data:application/json;base64,' , Base64.encode(
-                abi.encodePacked(
+            return string( abi.encodePacked( 'data:application/json;utf8,' , 
                     '{',
                         '"name":"' , metadataTitle ,'",' ,
                         '"description":"' , metadataDescription ,  '",' ,
@@ -365,8 +364,7 @@ contract NFTContract721 is RevokableDefaultOperatorFilterer, ERC2981 ,Ownable, E
                         useAnimationUrl==true ? string(abi.encodePacked('"animation_url": "' , animationURI , '",')) :"" ,
                         '"attributes":[{"trait_type":"type","value":"' , metadataAttributes , '"}]',
                     '}'
-                )
-            ) ) );
+            ) );
         }
         return string(abi.encodePacked(ERC721Psi.tokenURI(tokenId), baseExtension));
     }

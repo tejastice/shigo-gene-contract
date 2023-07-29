@@ -286,8 +286,7 @@ contract SBTContractSimple is Ownable, ERC721PsiBurnable {
             return interfaceOfTokenURI.tokenURI(tokenId);
         }
         if(useSingleMetadata == true){
-            return string( abi.encodePacked( 'data:application/json;base64,' , Base64.encode(
-                abi.encodePacked(
+            return string( abi.encodePacked( 'data:application/json;utf8,' , 
                     '{',
                         '"name":"' , metadataTitle ,'",' ,
                         '"description":"' , metadataDescription ,  '",' ,
@@ -295,8 +294,7 @@ contract SBTContractSimple is Ownable, ERC721PsiBurnable {
                         useAnimationUrl==true ? string(abi.encodePacked('"animation_url": "' , animationURI , '",')) :"" ,
                         '"attributes":[{"trait_type":"type","value":"' , metadataAttributes , '"}]',
                     '}'
-                )
-            ) ) );
+            ) );
         }
         return string(abi.encodePacked(ERC721Psi.tokenURI(tokenId), baseExtension));
     }
