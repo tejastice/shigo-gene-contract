@@ -42,7 +42,7 @@ contract externalMinter is Ownable , AccessControl{
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         grantRole( ADMIN             , msg.sender);
 
-        setWithdrawAddress(0x92B05EBc5E05eB2C5807D69D78d9a808a7a222b2);
+        setWithdrawAddress(0xdEcf4B112d4120B6998e5020a6B4819E490F7db6);
         setNFTCollection(0x56079F861B070D929fF867Cec28042C1f5Ccc836);
 
     }
