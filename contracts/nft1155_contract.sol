@@ -76,9 +76,9 @@ contract NFTContract1155 is RevokableDefaultOperatorFilterer , ERC1155, ERC2981 
         setWithdrawAddress(0x40abd10506bC2C62B5Ed6EcD4E97C042afd9927C);
 
         setPhaseId(0);
-        setUseOnChainMetadataWithImageURI(true);
+        setUseOnChainMetadata(true);
 
-        setOnChainMetadataWithImageURI(
+        setOnChainMetadata(
             0 , 
             "AKANE" , 
             "AKANE",
@@ -283,14 +283,6 @@ contract NFTContract1155 is RevokableDefaultOperatorFilterer , ERC1155, ERC2981 
     mapping (uint256 => string)  public metadataTitle;
     mapping (uint256 => string)  public metadataDescription;
     mapping (uint256 => string)  public metadataAttributes;
-    mapping (uint256 => string)  public imageData;
-
-    bool public useOnChainMetadataWithImageURI = false;
-
-    function setUseOnChainMetadataWithImageURI(bool _useOnChainMetadataWithImageURI) public onlyRole(ADMIN) {
-        useOnChainMetadataWithImageURI = _useOnChainMetadataWithImageURI;
-    }
-
     mapping (uint256 => string)  public imageURI;
     mapping (uint256 => bool)    public useAnimationURI;
     mapping (uint256 => string)  public animationURI;
@@ -308,11 +300,6 @@ contract NFTContract1155 is RevokableDefaultOperatorFilterer , ERC1155, ERC2981 
     function setMetadataAttributes(uint256 _id , string memory _metadataAttributes) public onlyRole(ADMIN) {
         metadataAttributes[_id] = _metadataAttributes;
     }
-    function setImageData(uint256 _id , string memory _imageData) public onlyRole(ADMIN) {
-        imageData[_id] = _imageData;
-    }
-
-
     function setImageURI(uint256 _id , string memory _imageURI) public onlyRole(ADMIN) {
         imageURI[_id] = _imageURI;
     }
@@ -325,20 +312,8 @@ contract NFTContract1155 is RevokableDefaultOperatorFilterer , ERC1155, ERC2981 
 
 
 
-    function setOnChainMetadata(
-        uint256 _id , 
-        string memory _metadataTitle, 
-        string memory _metadataDescription,
-        string memory _metadataAttributes,
-        string memory _imageData
-         )public onlyRole(ADMIN){
-        setMetadataTitle( _id , _metadataTitle);
-        setMetadataDescription( _id , _metadataDescription);
-        setMetadataAttributes( _id , _metadataAttributes);
-        setImageData( _id , _imageData);
-    }
 
-    function setOnChainMetadataWithImageURI(
+    function setOnChainMetadata(
         uint256 _id , 
         string memory _metadataTitle, 
         string memory _metadataDescription,
@@ -378,19 +353,7 @@ contract NFTContract1155 is RevokableDefaultOperatorFilterer , ERC1155, ERC2981 
         if( useInterfaceMetadata == true) {
             return interfaceOfTokenURI.tokenURI(_id);
         }
-        if( useOnChainMetadata == true ){
-            return string( abi.encodePacked( 'data:application/json;base64,' , Base64.encode(
-                abi.encodePacked(
-                    '{'
-                        '"name":"' , metadataTitle[_id] ,'",' ,
-                        '"description":"' , metadataDescription[_id] ,  '",' ,
-                        '"image": "data:image/svg+xml;base64,' , imageData[_id] , '",' ,
-                        '"attributes":[{"trait_type":"type","value":"' , metadataAttributes[_id] , '"}]',
-                    '}'
-                )
-            ) ) );
-        }
-        if(useOnChainMetadataWithImageURI == true){
+        if(useOnChainMetadata == true){
             return string( abi.encodePacked( 'data:application/json;base64,' , Base64.encode(
                 abi.encodePacked(
                     '{',

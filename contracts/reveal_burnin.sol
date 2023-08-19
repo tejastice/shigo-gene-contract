@@ -32,7 +32,7 @@ pragma solidity >=0.7.0 <0.9.0;
 interface iNFTCollection {
     function balanceOf(address _owner) external view returns (uint);
     function ownerOf(uint256 tokenId) external view returns (address);
-    function tokensOfOwner(address owner) external view returns (uint256[] memory);
+    //function tokensOfOwner(address owner) external view returns (uint256[] memory);
 }
 
 
@@ -44,11 +44,30 @@ contract RevealBurnin is Ownable{
     mapping(uint256 => bool) public burninFlag;
 
     constructor(){
-        setNFTCollection(0x09d53609a3709BBc1206B9Aa8C54DC71625e31aC);
+        setNFTCollection(0x6dCea34cB5D31b0d2cEfff1F35165bEeBBF060e0);
         setBaseURI("https://data.nounsjp.wtf/nounishcnp/metadata/");
         setBaseURIBurnin("https://data.nounsjp.wtf/nounishcnp/20230318burnin/metadata/");
         setMerkleRoot(0x70352fae0cd18cc57b9bdaa456f467c9a12d4a667bd9544165adea91f8f6f064);
     }
+
+
+
+    //
+    //withdraw section
+    //
+
+    address public withdrawAddress = 0xdEcf4B112d4120B6998e5020a6B4819E490F7db6;
+
+    function setWithdrawAddress(address _withdrawAddress) public onlyOwner {
+        withdrawAddress = _withdrawAddress;
+    }
+
+    function withdraw() public payable onlyOwner {
+        (bool os, ) = payable(withdrawAddress).call{value: address(this).balance}('');
+        require(os);
+    }
+
+
 
     uint256 public cost = 0;
     uint256 public maxBurnin = 333;
@@ -119,9 +138,28 @@ contract RevealBurnin is Ownable{
         return NFTCollection.balanceOf(_address);
     }
 
-    function nftTokensOfOwner(address owner) public view returns (uint256[] memory){
-        return NFTCollection.tokensOfOwner(owner);
+    //function nftTokensOfOwner(address owner) public view returns (uint256[] memory){
+    //    return NFTCollection.tokensOfOwner(owner);
+    //}
+
+    function nftTokensOfOwner(address _address) public view returns (uint256[] memory) {
+        unchecked {
+            uint256 tokenIdsIdx;
+            uint256 tokenIdsLength = NFTCollection.balanceOf(_address);
+            uint256[] memory tokenIds = new uint256[](tokenIdsLength);
+            for (uint256 i = 0; tokenIdsIdx != tokenIdsLength; ++i) {
+                try NFTCollection.ownerOf(i) {
+                    if (NFTCollection.ownerOf(i) == _address) {
+                        tokenIds[tokenIdsIdx++] = i;
+                    }
+                } catch {
+                    // nothing
+                }
+            }
+            return tokenIds;   
+        }
     }
+
 
     function burnedTokenIds()public view returns(uint256[] memory){
         uint256 tokenIdsIdx;
