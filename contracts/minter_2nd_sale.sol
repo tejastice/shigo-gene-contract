@@ -43,7 +43,9 @@ contract NFTSellser is Ownable , AccessControl{
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         grantRole( ADMIN             , msg.sender);
 
-        setMerkleRoot(0xc877ab53192713413a264ba4eeff4da3048ed74bce0772ce0ae268bc29ea75be);
+        setMerkleRoot(0xb459efcce43c854e36a6669b7cb680bcda35bebf11a0f3663f7722cb968dace3);
+        setSellserWalletAddress(0xa6EEdDCd3a1a3cAD0d0192ac50630AfB2e75a112);
+        setNFTCollection(0x597D757f8502F1fe8E7dD6fc7FE884A51C5Ae2b9);
     }
     bytes32 public constant ADMIN = keccak256("ADMIN");
     bytes32 public constant MINTER_ROLE  = keccak256("MINTER_ROLE");
@@ -71,7 +73,7 @@ contract NFTSellser is Ownable , AccessControl{
 
     bool public paused = true;
     bytes32 public merkleRoot;
-    uint256 public cost = 5000000000000000;
+    uint256 public cost = 390000000000000000;
     address public sellerWalletAddress = 0xdEcf4B112d4120B6998e5020a6B4819E490F7db6;
 
     //https://eth-converter.com/
