@@ -77,7 +77,7 @@ contract NFTContract721 is RevokableDefaultOperatorFilterer, ERC2981 ,Ownable, E
         _addLocalContractAllowList(0x4feE7B061C97C9c496b01DbcE9CDb10c02f0a0Be);//Rarible
 
         //initial mint
-        _safeMint(msg.sender, 1);        
+        _safeMint(msg.sender, 5);        
 
         //Royalty
         setDefaultRoyalty(0xdEcf4B112d4120B6998e5020a6B4819E490F7db6 , 1000);
@@ -437,6 +437,9 @@ contract NFTContract721 is RevokableDefaultOperatorFilterer, ERC2981 ,Ownable, E
             to == address(0x000000000000000000000000000000000000dEaD),
             "transfer is prohibited"
         );
+//        if( signatureProccessAddress != address(0) ){
+//            require( signatureProccessTokenId != startTokenId , "token is lodked");
+//        }
         super._beforeTokenTransfers(from, to, startTokenId, quantity);
     }
 
@@ -604,6 +607,51 @@ contract NFTContract721 is RevokableDefaultOperatorFilterer, ERC2981 ,Ownable, E
     }
 
 
+
+    //
+    //digital signature
+    //
+
+
+/*
+
+    address public signatureAddress;
+    bool public signaturePaused = true;
+
+    address signatureProccessAddress;
+    uint256 signatureProccessTokenId;
+
+    function setSignaturePause(bool _state) public onlyRole(ADMIN) {
+        digitalSignatureReceive();
+        signaturePaused = _state;
+    }
+
+    function setSignatureWallet(address _signatureAddress) public onlyRole(ADMIN) {
+        signatureAddress = _signatureAddress;
+    }    
+
+    function digitalSignature(uint256 _tokenId) public nonReentrant{
+        require(!signaturePaused, "the contract is paused");
+        require( ownerOf( _tokenId ) == msg.sender , "owner is different");
+
+        digitalSignatureReceive();
+
+        emit Transfer( msg.sender, signatureAddress, _tokenId);
+
+        signatureProccessTokenId = _tokenId;
+        signatureProccessAddress = msg.sender;
+
+    }
+
+    function digitalSignatureReceive() internal {
+
+        if( signatureProccessAddress != address(0) ){
+            emit Transfer( signatureAddress , signatureProccessAddress , signatureProccessTokenId );
+            signatureProccessAddress = address(0);
+        }
+
+    }
+*/
 
     /*///////////////////////////////////////////////////////////////
                     OVERRIDES ERC721RestrictApprove
