@@ -1,5 +1,5 @@
 {
-  "name": "llac",
+  "name": "shigo-gene-contract",
   "scripts": {
     "test": "REPORT_GAS=true npx hardhat test"
   },
@@ -15,7 +15,6 @@
     "merkletreejs": "^0.3.0",
     "hardhat": "^2.11.2",
     "base64-sol": "",
-    "operator-filter-registry": "^1.3.1",
     "keccak256": "^1.0.6"
   }
 }

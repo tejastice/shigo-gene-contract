@@ -33,8 +33,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import {UpdatableOperatorFilterer} from "operator-filter-registry/src/UpdatableOperatorFilterer.sol";
-import {RevokableDefaultOperatorFilterer} from "operator-filter-registry/src/RevokableDefaultOperatorFilterer.sol";
 
 //tokenURI interface
 interface iTokenURI {
@@ -48,7 +46,7 @@ interface iSbtCollection {
 }
 
 
-contract NFTContract721 is RevokableDefaultOperatorFilterer, ERC2981 ,Ownable, ERC721RestrictApprove ,AccessControl,ReentrancyGuard {
+contract NFTContract721 is ERC2981 ,Ownable, ERC721RestrictApprove ,AccessControl,ReentrancyGuard {
 
     constructor(
     ) ERC721Psi("NFT Contract", "NFT") {
@@ -443,35 +441,17 @@ contract NFTContract721 is RevokableDefaultOperatorFilterer, ERC2981 ,Ownable, E
         super._beforeTokenTransfers(from, to, startTokenId, quantity);
     }
 
-    function setApprovalForAll(address operator, bool approved) public virtual override onlyAllowedOperatorApproval(operator){
+    function setApprovalForAll(address operator, bool approved) public virtual override {
         require( isSBT == false || approved == false , "setApprovalForAll is prohibited");
         require( timeRelease() == true , "Time lock Now");
         super.setApprovalForAll(operator, approved);
     }
 
-    function approve(address operator, uint256 tokenId) public virtual override onlyAllowedOperatorApproval(operator){
+    function approve(address operator, uint256 tokenId) public virtual override {
         require( isSBT == false , "approve is prohibited");
         require( timeRelease() == true , "Time lock Now");
         super.approve(operator, tokenId);
     }
-
-    function transferFrom(address from, address to, uint256 tokenId) public override onlyAllowedOperator(from) {
-        super.transferFrom(from, to, tokenId);
-    }
-
-    function safeTransferFrom(address from, address to, uint256 tokenId) public override onlyAllowedOperator(from) {
-        super.safeTransferFrom(from, to, tokenId);
-    }
-
-    function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory data) public override onlyAllowedOperator(from) {
-        super.safeTransferFrom(from, to, tokenId, data);
-    }
-
-    function owner() public view virtual override (Ownable, UpdatableOperatorFilterer) returns (address) {
-        return Ownable.owner();
-    }
-
-
 
 
     //

@@ -35,8 +35,6 @@ import "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "contract-allow-list/contracts/proxy/interface/IContractAllowListProxy.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import {UpdatableOperatorFilterer} from "operator-filter-registry/src/UpdatableOperatorFilterer.sol";
-import {RevokableDefaultOperatorFilterer} from "operator-filter-registry/src/RevokableDefaultOperatorFilterer.sol";
 
 
 //tokenURI interface
@@ -44,7 +42,7 @@ interface iTokenURI {
     function tokenURI(uint256 _tokenId) external view returns (string memory);
 }
 
-contract NFTContract1155 is RevokableDefaultOperatorFilterer , ERC1155, ERC2981 , Ownable ,AccessControl{
+contract NFTContract1155 is  ERC1155, ERC2981 , Ownable ,AccessControl{
     using Strings for uint256;    
 
     string public name;
@@ -474,31 +472,13 @@ contract NFTContract1155 is RevokableDefaultOperatorFilterer , ERC1155, ERC2981 
         isSBT = _state;
     }
 
-    function setApprovalForAll(address operator, bool approved) public virtual override onlyAllowedOperatorApproval(operator) {
+    function setApprovalForAll(address operator, bool approved) public virtual override {
         require( isSBT == false || approved == false , "setApprovalForAll is prohibited");
         require(
             _isAllowed(operator) || approved == false,
             "RestrictApprove: Can not approve locked token"
         );
         super.setApprovalForAll(operator, approved);
-    }
-
-    function safeTransferFrom(address from, address to, uint256 tokenId, uint256 amount, bytes memory data)
-        public
-        override
-        onlyAllowedOperator(from)
-    {
-        super.safeTransferFrom(from, to, tokenId, amount, data);
-    }
-
-    function safeBatchTransferFrom(
-        address from,
-        address to,
-        uint256[] memory ids,
-        uint256[] memory amounts,
-        bytes memory data
-    ) public virtual override onlyAllowedOperator(from) {
-        super.safeBatchTransferFrom(from, to, ids, amounts, data);
     }
 
     function _beforeTokenTransfer(
@@ -517,11 +497,6 @@ contract NFTContract1155 is RevokableDefaultOperatorFilterer , ERC1155, ERC2981 
             "transfer is prohibited");
         super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
     }
-
-    function owner() public view virtual override(Ownable, UpdatableOperatorFilterer) returns (address) {
-        return Ownable.owner();
-    }
-
 
     //
     //setDefaultRoyalty

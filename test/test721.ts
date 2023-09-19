@@ -43,6 +43,12 @@ describe("Test of ERC721", function () {
     return dSellerContract 
   }  
 
+  const BatchSellerdeploy = async (owner: Signer) => {
+    const BatchSellerContract = await ethers.getContractFactory("NFTSellserBatch")
+    const dBatchSellerContract = await BatchSellerContract.connect(owner).deploy()
+    return dBatchSellerContract 
+  }  
+
   async function fixture() {
     const [owner, otherAccount1 , otherAccount2] = await ethers.getSigners()
     const withdrawAddress = await ethers.getSigner(otherAccount1.address)
@@ -950,6 +956,47 @@ describe("Test of ERC721", function () {
 
     });
 
+
+    it("Batch Seller test", async function () {
+      const { NFTContract, SBTContract , owner, otherAccount1 , otherAccount2 , withdrawAddress, royaltyAddress } = await loadFixture(fixture)
+      const BatchSellerContract = await BatchSellerdeploy(owner)
+  
+      let currentTokenId =  Number(await NFTContract.connect(owner).currentTokenId()) ;
+      await NFTContract.connect(owner).airdropMint([otherAccount1.address],[5] );
+      
+      await expect(BatchSellerContract.connect(owner).setSaleData( 5000000000000000  , otherAccount1.address ,otherAccount1.address ,  NFTContract.address , [3,4]) ).not.reverted;
+
+      //全部エラー
+      await expect( BatchSellerContract.connect(otherAccount2).buy({ value: ethers.utils.parseEther("0.001") }) ).revertedWith("the contract is paused");
+      await BatchSellerContract.connect(owner).setPause(false);
+      await expect( BatchSellerContract.connect(otherAccount2).buy({ value: ethers.utils.parseEther("0") }) ).revertedWith("insufficient funds");
+      await expect( BatchSellerContract.connect(otherAccount2).buy({ value: ethers.utils.parseEther("1") }) ).revertedWith("You are not on the Arrow List.");
+
+      await expect(BatchSellerContract.connect(owner).setSaleData( 5000000000000000  , otherAccount1.address ,otherAccount2.address ,  NFTContract.address , [3,100]) ).not.reverted;
+
+      await expect( BatchSellerContract.connect(otherAccount2).buy({ value: ethers.utils.parseEther("1") }) ).revertedWith("NFT out of stock");
+      await expect( BatchSellerContract.connect(otherAccount2).buy({ value: ethers.utils.parseEther("1") }) ).reverted;
+
+      await NFTContract.connect(owner).addLocalContractAllowList(BatchSellerContract.address);
+      await NFTContract.connect(otherAccount1).setApprovalForAll(BatchSellerContract.address,true);
+
+
+      let tokenids;
+
+      tokenids = await NFTContract.tokensOfOwner(otherAccount1.address);
+      console.log(tokenids)
+
+      await expect(BatchSellerContract.connect(owner).setSaleData( 5000000000000000  , otherAccount1.address ,otherAccount2.address ,  NFTContract.address , tokenids) ).not.reverted;
+
+
+      //成功！
+      await expect( BatchSellerContract.connect(otherAccount2).buy({ value: ethers.utils.parseEther("1") }) ).not.reverted;
+
+      tokenids = await NFTContract.tokensOfOwner(otherAccount2.address);
+      console.log(tokenids)
+
+
+    });
 
 
 
