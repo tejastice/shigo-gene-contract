@@ -43,6 +43,12 @@ describe("Test of ERC721", function () {
     return dSellerContract 
   }  
 
+  const SellerPublicdeploy = async (owner: Signer) => {
+    const SellerPublicContract = await ethers.getContractFactory("NFTSellserPublic")
+    const dSellerPublicContract = await SellerPublicContract.connect(owner).deploy()
+    return dSellerPublicContract 
+  }  
+
   const BatchSellerdeploy = async (owner: Signer) => {
     const BatchSellerContract = await ethers.getContractFactory("NFTSellserBatch")
     const dBatchSellerContract = await BatchSellerContract.connect(owner).deploy()
@@ -998,6 +1004,45 @@ describe("Test of ERC721", function () {
 
     });
 
+    it("Seller public test", async function () {
+      const { NFTContract, SBTContract , owner, otherAccount1 , otherAccount2 , withdrawAddress, royaltyAddress } = await loadFixture(fixture)
+      const SellerPublicContract = await SellerPublicdeploy(owner)
+  
+      let currentTokenId =  Number(await NFTContract.connect(owner).currentTokenId()) ;
+      await NFTContract.connect(owner).airdropMint([otherAccount1.address],[5] );
+
+
+      await expect(SellerPublicContract.connect(owner).setSaleData( 5000000000000000 , otherAccount1.address , NFTContract.address) ).not.reverted;
+
+      let sellerWalletAddress = await SellerPublicContract.sellerWalletAddress();
+      let withdrawWalletAddress = await SellerPublicContract.withdrawAddress();
+      let tokenIds = await SellerPublicContract.nftTokensOfOwner(sellerWalletAddress);
+      console.log(sellerWalletAddress)
+      console.log(tokenIds)
+
+      
+      //全部エラー
+      await expect( SellerPublicContract.connect(otherAccount2).buy(tokenIds[0] , { value: ethers.utils.parseEther("0.001") }) ).revertedWith("the contract is paused");
+      await SellerPublicContract.connect(owner).setPause(false);
+      await expect( SellerPublicContract.connect(otherAccount2).buy(tokenIds[0] , { value: ethers.utils.parseEther("0") }) ).revertedWith("insufficient funds");
+      await expect( SellerPublicContract.connect(otherAccount2).buy(0,{ value: ethers.utils.parseEther("1") }) ).revertedWith("NFT out of stock");
+      
+      await NFTContract.connect(owner).addLocalContractAllowList(SellerPublicContract.address);
+      await NFTContract.connect(otherAccount1).setApprovalForAll(SellerPublicContract.address,true);
+
+      // withdrawWalletAddressのeth残高を取得する
+      let balance
+      balance = await ethers.provider.getBalance(withdrawWalletAddress);
+      console.log(ethers.utils.formatEther(balance));
+
+      //成功！
+      await expect( SellerPublicContract.connect(otherAccount2).buy(tokenIds[0],{ value: ethers.utils.parseEther("1") }) ).not.reverted;
+
+      balance = await ethers.provider.getBalance(withdrawWalletAddress);
+      console.log(ethers.utils.formatEther(balance));
+
+
+    });
 
 
 
