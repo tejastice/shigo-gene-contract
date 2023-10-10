@@ -43,7 +43,7 @@ contract NFTSellserPublic is Ownable , AccessControl{
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         grantRole( ADMIN             , msg.sender);
 
-        setSellserWalletAddress(0xa6EEdDCd3a1a3cAD0d0192ac50630AfB2e75a112);
+        setSellserWalletAddress(0x4414F1abf9E4a97EEF93e1F0ab96C2C1FD88f86c);
         setNFTCollection(0x597D757f8502F1fe8E7dD6fc7FE884A51C5Ae2b9);
     }
     bytes32 public constant ADMIN = keccak256("ADMIN");
