@@ -402,56 +402,29 @@ contract NFTContract721 is ERC2981 ,Ownable, ERC721RestrictApprove ,AccessContro
     //
 
     bool public isSBT = false;
-    bool public useTimeRelease = false;
-    uint256 public timeReleaseStamp = 1672542000; //2023-01-01 12:00 JST
-    //https://tool.konisimple.net/date/unixtime
 
     function setIsSBT(bool _state) public onlyRole(ADMIN) {
         isSBT = _state;
     }
-    function setUseTimeRelease(bool _useTimeRelease) public onlyRole(ADMIN) {
-        useTimeRelease = _useTimeRelease;
-    }
-
-    function setTimeReleaseStamp(uint256 _timeReleaseStamp) public onlyRole(ADMIN) {
-        timeReleaseStamp = _timeReleaseStamp;
-    }
-
-    function timeRelease() public view returns(bool){
-        if( useTimeRelease == false){
-            return true;
-        }else{
-            if( block.timestamp < timeReleaseStamp ){
-                return false;
-            }else{
-                return true;
-            }
-        }
-    }
 
     function _beforeTokenTransfers( address from, address to, uint256 startTokenId, uint256 quantity) internal virtual override{
         require( 
-            (isSBT == false && timeRelease() == true) ||
+            (isSBT == false ) ||
             from == address(0) || 
             to == address(0)|| 
             to == address(0x000000000000000000000000000000000000dEaD),
             "transfer is prohibited"
         );
-//        if( signatureProccessAddress != address(0) ){
-//            require( signatureProccessTokenId != startTokenId , "token is lodked");
-//        }
         super._beforeTokenTransfers(from, to, startTokenId, quantity);
     }
 
     function setApprovalForAll(address operator, bool approved) public virtual override {
         require( isSBT == false || approved == false , "setApprovalForAll is prohibited");
-        require( timeRelease() == true , "Time lock Now");
         super.setApprovalForAll(operator, approved);
     }
 
     function approve(address operator, uint256 tokenId) public virtual override {
         require( isSBT == false , "approve is prohibited");
-        require( timeRelease() == true , "Time lock Now");
         super.approve(operator, tokenId);
     }
 
@@ -590,50 +563,6 @@ contract NFTContract721 is ERC2981 ,Ownable, ERC721RestrictApprove ,AccessContro
 
 
 
-    //
-    //digital signature
-    //
-
-
-/*
-
-    address public signatureAddress;
-    bool public signaturePaused = true;
-
-    address signatureProccessAddress;
-    uint256 signatureProccessTokenId;
-
-    function setSignaturePause(bool _state) public onlyRole(ADMIN) {
-        digitalSignatureReceive();
-        signaturePaused = _state;
-    }
-
-    function setSignatureWallet(address _signatureAddress) public onlyRole(ADMIN) {
-        signatureAddress = _signatureAddress;
-    }    
-
-    function digitalSignature(uint256 _tokenId) public nonReentrant{
-        require(!signaturePaused, "the contract is paused");
-        require( ownerOf( _tokenId ) == msg.sender , "owner is different");
-
-        digitalSignatureReceive();
-
-        emit Transfer( msg.sender, signatureAddress, _tokenId);
-
-        signatureProccessTokenId = _tokenId;
-        signatureProccessAddress = msg.sender;
-
-    }
-
-    function digitalSignatureReceive() internal {
-
-        if( signatureProccessAddress != address(0) ){
-            emit Transfer( signatureAddress , signatureProccessAddress , signatureProccessTokenId );
-            signatureProccessAddress = address(0);
-        }
-
-    }
-*/
 
     /*///////////////////////////////////////////////////////////////
                     OVERRIDES ERC721RestrictApprove
