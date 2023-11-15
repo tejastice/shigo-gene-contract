@@ -45,7 +45,9 @@ contract NFTSellserPublic is Ownable , AccessControl{
 
         setSellserWalletAddress(0x4414F1abf9E4a97EEF93e1F0ab96C2C1FD88f86c);
         setNFTCollection(0x597D757f8502F1fe8E7dD6fc7FE884A51C5Ae2b9);
+
     }
+
     bytes32 public constant ADMIN = keccak256("ADMIN");
     bytes32 public constant MINTER_ROLE  = keccak256("MINTER_ROLE");
 
@@ -74,6 +76,9 @@ contract NFTSellserPublic is Ownable , AccessControl{
     uint256 public cost = 390000000000000000;
     address public sellerWalletAddress = 0xdEcf4B112d4120B6998e5020a6B4819E490F7db6;
 
+    uint256 public saleNumber;
+    uint256[] public saleTokenIds;
+
     //https://eth-converter.com/
 
     iNFTCollection public NFTCollection;
@@ -83,24 +88,28 @@ contract NFTSellserPublic is Ownable , AccessControl{
         _;
     }
 
-    function buy(uint256 _tokenId ) public payable callerIsUser{
-        require(!paused, "the contract is paused");
-        require(cost  <= msg.value, "insufficient funds");
-        require(NFTCollection.ownerOf(_tokenId) == sellerWalletAddress , "NFT out of stock");
+    function buy() public payable callerIsUser{
+        require( !paused, "the contract is paused");
+        require( cost  <= msg.value, "insufficient funds");
+        require( saleNumber < saleTokenIds.length , "out of stock");
+        require( NFTCollection.ownerOf( saleTokenIds[saleNumber] ) == sellerWalletAddress , "NFT out of stock");
 
-        NFTCollection.safeTransferFrom( sellerWalletAddress , msg.sender , _tokenId );
+        NFTCollection.safeTransferFrom( sellerWalletAddress , msg.sender , saleTokenIds[saleNumber] );
+        saleNumber += 1;
 
         (bool os, ) = payable(withdrawAddress).call{value: address(this).balance}('');
         require(os);
 
     }
 
-    function buyPie(uint256 _tokenId , address receiver) public payable callerIsUser onlyRole(MINTER_ROLE){
+    function buyPie(address receiver) public payable callerIsUser onlyRole(MINTER_ROLE){
         require(!paused, "the contract is paused");
         require(cost  <= msg.value, "insufficient funds");
-        require(NFTCollection.ownerOf(_tokenId) == sellerWalletAddress , "NFT out of stock");
+        require( saleNumber < saleTokenIds.length , "out of stock");
+        require( NFTCollection.ownerOf( saleTokenIds[saleNumber] ) == sellerWalletAddress , "NFT out of stock");
 
-        NFTCollection.safeTransferFrom( sellerWalletAddress , receiver , _tokenId );
+        NFTCollection.safeTransferFrom( sellerWalletAddress , receiver , saleTokenIds[saleNumber] );
+        saleNumber += 1;
 
         (bool os, ) = payable(withdrawAddress).call{value: address(this).balance}('');
         require(os);
@@ -112,6 +121,15 @@ contract NFTSellserPublic is Ownable , AccessControl{
 
     function setCost(uint256 _newCost) public onlyRole(ADMIN) {
         cost = _newCost;
+    }
+
+    function setSaleTokenIds(uint256[] memory _tokenIds ) public onlyRole(ADMIN){
+        saleTokenIds = _tokenIds;
+        saleNumber = 0;
+    }
+
+    function getSaleTokenIds() public view returns (uint256[] memory){
+        return saleTokenIds;
     }
 
     function setSellserWalletAddress(address _sellerWalletAddress) public onlyRole(ADMIN)  {

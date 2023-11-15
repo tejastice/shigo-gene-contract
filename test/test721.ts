@@ -1020,13 +1020,15 @@ describe("Test of ERC721", function () {
       console.log(sellerWalletAddress)
       console.log(tokenIds)
 
+      await SellerPublicContract.connect(owner).setSaleTokenIds(tokenIds) 
       
       //全部エラー
-      await expect( SellerPublicContract.connect(otherAccount2).buy(tokenIds[0] , { value: ethers.utils.parseEther("0.001") }) ).revertedWith("the contract is paused");
+      await expect( SellerPublicContract.connect(otherAccount2).buy({ value: ethers.utils.parseEther("0.001") }) ).revertedWith("the contract is paused");
       await SellerPublicContract.connect(owner).setPause(false);
-      await expect( SellerPublicContract.connect(otherAccount2).buy(tokenIds[0] , { value: ethers.utils.parseEther("0") }) ).revertedWith("insufficient funds");
-      await expect( SellerPublicContract.connect(otherAccount2).buy(0,{ value: ethers.utils.parseEther("1") }) ).revertedWith("NFT out of stock");
+      await expect( SellerPublicContract.connect(otherAccount2).buy( { value: ethers.utils.parseEther("0") }) ).revertedWith("insufficient funds");
+      //await expect( SellerPublicContract.connect(otherAccount2).buy({ value: ethers.utils.parseEther("1") }) ).revertedWith("NFT out of stock");
       
+
       await NFTContract.connect(owner).addLocalContractAllowList(SellerPublicContract.address);
       await NFTContract.connect(otherAccount1).setApprovalForAll(SellerPublicContract.address,true);
 
@@ -1036,10 +1038,17 @@ describe("Test of ERC721", function () {
       console.log(ethers.utils.formatEther(balance));
 
       //成功！
-      await expect( SellerPublicContract.connect(otherAccount2).buy(tokenIds[0],{ value: ethers.utils.parseEther("1") }) ).not.reverted;
+      for( let i  = 0 ; i <  tokenIds.length ; i++ ){
+        await expect( SellerPublicContract.connect(otherAccount2).buy({ value: ethers.utils.parseEther("1") }) ).not.reverted;
+      }
 
       balance = await ethers.provider.getBalance(withdrawWalletAddress);
       console.log(ethers.utils.formatEther(balance));
+      
+      await expect( SellerPublicContract.connect(otherAccount2).buy({ value: ethers.utils.parseEther("1") }) ).revertedWith("out of stock");
+
+      await SellerPublicContract.connect(owner).setSaleTokenIds([999]) 
+      await expect( SellerPublicContract.connect(otherAccount2).buy({ value: ethers.utils.parseEther("1") }) ).reverted;
 
 
     });
